@@ -10,7 +10,7 @@ import time
 client = MongoClient('mongodb://localhost:27017/')
 
 # Choose database
-db = client['InfoSys']
+db = client['DSMarkets']
 
 # Choose collections
 users_db = db['Users']
@@ -22,13 +22,19 @@ cart = {"products": [], "total_cost": 0}
 # Initiate Flask App
 app = Flask(__name__)
 
+# Initialize dictionary for user login sessions
 users_sessions = {}
 
+# Create function that generates a unique id for a user's login
+# The keys of users_sessions will be the unique user_uuid
+# The values will be a tuple with user's email and time of login
 def create_session(email):
     user_uuid = str(uuid.uuid1())
     users_sessions[user_uuid] = (email, time.time())
     return user_uuid  
 
+# Create function that validates if a user is logged in
+# by checking if user_uuid is in users_sessions
 def is_session_valid(user_uuid):
     return user_uuid in users_sessions
 
