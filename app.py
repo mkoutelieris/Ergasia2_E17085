@@ -274,7 +274,6 @@ def delete_from_cart():
 
         if(user_cat['category'] == "simple user"):
             products_in_cart = cart["products"]
-            print(products_in_cart)
             found = False
             
             for i,prod in enumerate(products_in_cart):
