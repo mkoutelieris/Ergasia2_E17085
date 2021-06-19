@@ -461,7 +461,7 @@ def update_product():
             print(users_sessions)
             product = products_db.find_one({"_id": ObjectId(str(p_code))})
             if product != None:
-                acceptable_keys = ["name", "price", "description", "price"]
+                acceptable_keys = ["name", "price", "description", "stock"]
                 non_acc_keys = False
                 
                 for key in data:
