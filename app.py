@@ -10,7 +10,7 @@ import time
 client = MongoClient('mongodb://localhost:27017/')
 
 # Choose database
-db = client['DSMarkets']
+db = client['InfoSys']
 
 # Choose collections
 users_db = db['Users']
@@ -250,7 +250,6 @@ def show_cart():
         user_cat = users_db.find_one({"email": user_email})
 
         if(user_cat['category'] == "simple user"):
-            print(users_sessions)
             return Response("Cart:\n\n"+json.dumps(cart), status=200, mimetype='application/json')
         else:
             return Response("Permission denied", status=401, mimetype='application/json')
