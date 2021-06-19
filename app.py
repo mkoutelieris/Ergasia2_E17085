@@ -458,7 +458,6 @@ def update_product():
         user_cat = users_db.find_one({"email": user_email})
 
         if(user_cat['category'] == "admin user"):
-            print(users_sessions)
             product = products_db.find_one({"_id": ObjectId(str(p_code))})
             if product != None:
                 acceptable_keys = ["name", "price", "description", "stock"]
