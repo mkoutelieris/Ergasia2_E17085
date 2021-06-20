@@ -741,4 +741,48 @@ def update_product():
                         non_acc_keys = True
 ```
 
+  Αν ο χρήστης είναι διαχειριστής, τότε δημιουργούμε μεταβλητή ```product``` στην οποία αποθηκεύουμε το αποτέλεσμα της αναζήτησης προϊόντος με βάση τον κωδικό του χρησιμοποιώντας το argument ```p_code```. Επειδή ο κωδικός προϊόντος αποδίδεται αυτόματα όταν γίνεται εισαγωγή προϊόντος στο collection Products από την mongodb και είναι τύπου αντικειμένου ObjectId, μέσω της εισαγωγής της βιβλιοθήκης ```bson.objectid``` στο προγραμμά μας, μπορούμε να μετατρέψουμε τον κωδικό ```p_code``` που εισήγαγε ο χρήστης ως argument σε τύπο που να αναγνωρίζει η mongodb βάση. Αν βρεθεί το προϊόν με τον δωθέν κωδικό, δηλαδή αν η μεταβλητή ```product``` δεν είναι τύπου None/κενή, τότε δημιουργούμε μια λίστα ```acceptable_keys```, η οποία περιέχει τα επιτρεπτά κλειδιά για την ενημέρωση του προϊόντος, και μεταβλητή ```non_acc_keys``` με τιμή False, η οποία θα γίνεται True αν η μεταβλητή ```data``` περιέχει έστω και ένα κλειδί που δεν βρίσκεται στην λίστα ```acceptable_keys```.
   
+  Στη συνέχεια, πραγματοποιούμε επανάληψη στα json δεδομένα της μεταβλητής ```data``` προσπελαύνοντάς τα. Αν κάποιο κλειδί της μεταβλητής ```data``` δεν υπάρχει στη λίστα με τα αποδεκτά κλειδιά ```acceptable_keys```, τότε σημαίνει ότι η ενημέρωση του προϊόντος δεν είναι έγκυρη κι έτσι θέτουμε την τιμή της μεταβλητής ```non_acc_keys``` σε True.
+  
+```
+                if(non_acc_keys == True):
+                    return Response("Invalid product information", status=500, mimetype='application/json')
+                else:
+                    for key in data:
+                        if(key == "name"):
+                            products_db.update_one({"_id": ObjectId(str(p_code))}, {"$set": {str(key): data['name']}})
+                        elif(key == "price"):
+                            products_db.update_one({"_id": ObjectId(str(p_code))}, {"$set": {str(key): data['price']}})
+                        elif(key == "description"):
+                            products_db.update_one({"_id": ObjectId(str(p_code))}, {"$set": {str(key): data['description']}})
+                        elif(key == "stock"):
+                            products_db.update_one({"_id": ObjectId(str(p_code))}, {"$set": {str(key): data['stock']}})
+                    
+                    return Response("Product with code: "+p_code+" was updated successfully", status=200, mimetype='application/json')
+            else:
+                return Response("Product with code: "+p_code+" not found in database", status=400, mimetype='application/json')
+        else:
+            return Response("Permission denied", status=401, mimetype='application/json')
+    else:
+        # Μήνυμα λάθους (λάθος id αυθεντικοποίησης)
+        return Response("user is not authenticated", status=401, mimetype='application/json')
+```
+
+  Αν η μεταβλητή ```non_acc_keys``` είναι True, δηλαδή η μεταβλητή ```data``` περιέχει έστω και ένα κλειδί που δεν υπάρχουν στην λίστα ```acceptable_keys``` και έτσι καθίσταται μη έγκυρη η ενημέρωση του προϊόντος, τότε επιστρέφουμε αντικείμενο Response με κατάλληλο error μήνυμα και κωδικό αποτυχίας 500.
+  
+  Αν η μεταβλητή ```non_acc_keys``` είναι False, δηλαδή όλα τα κλειδιά της μεταβλητής ```data``` είναι επιτρεπτά και υπάρχουν στη λίστα ```acceptable_keys``` κι έτσι είναι έγκυρη η ενημέρωση του προϊόντος, τότε πραγματοποιώ επανάληψη ξανά στα json δεδομένα της μεταβλητής ```data``` προσπελαύνοντάς τα. Για κάθε κλειδί της μεταβλητής ελέγχω αν το κλειδί αυτό είναι ένα από τα επιτρεπόμενα κι έπειτα ενημερώνω το αντίστοιχο field του document του προϊόντος στο collection Products της mongodb με την τιμή του κλειδιού. Αυτό το κάνω επαναληπτικά για όλα τα δεδομένα της μεταβλητής ```data```. Τελικά, μετά το πέρας των επαναλήψεων, επιστρέφουμε αντικείμενο Response με κατάλληλο μήνυμα επιτυχίας και κωδικό επιτυχίας 200.
+  
+  Αν το προϊόν προς ενημέρωση με τον κωδικό ```p_cope``` δεν υπάρχει στο collection Products της mongodb, τότε επιστρέφουμε αντικείμενο Response με κατάλληλο error μήνυμα και κωδικό αποτυχίας 400.
+  
+  Σε περίπτωση που ο συνδεδεμένος χρήστης είναι απλός χρήστης, δηλαδή το πεδίο category του document του συνδεδεμένου χρήστη είναι "simple user", τότε επιστρέφουμε αντικείμενο Response με κατάλληλο error μήνυμα και κωδικό αποτυχίας 401.
+  
+  Σε περίπτωση που έχει γίνει λάθος αυθεντικοποίηση του χρήστη, δηλαδή το user_uuid δεν αντιστοιχεί σε κάποιον χρήστη του ευρετηρίου ```users_sessions```, τότε επιστρέφουμε αντικείμενο Response με κατάλληλο error μήνυμα και κωδικό αποτυχίας 401.
+
+```
+# Εκτέλεση flask service σε debug mode, στην port 5000. 
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
+```
+
+  Με την παραπάνω εντολή, εκτελούμε την υπηρεσία flask μέσω του port 5000.
