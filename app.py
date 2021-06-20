@@ -468,7 +468,7 @@ def update_product():
                         non_acc_keys = True
 
                 if(non_acc_keys == True):
-                    return Response("Invalid product field", status=400, mimetype='application/json')
+                    return Response("Invalid product information", status=500, mimetype='application/json')
                 else:
                     for key in data:
                         if(key == "name"):
