@@ -1,24 +1,20 @@
 version: '2'
 services:
     mongodb:
-        image: mongo
+        image: mongo:latest
         restart: always
         container_name: mongodb
         ports:
         - 27017:27017
         volumes:
         - ./mongodb/data:/data/db
-    mongoimport:
-        image: mongo
-        links:
-            - mongodb
-        command:
-            /data/import.sh
     flask-service:
         build:
             context: ./flask
         restart: always
         container_name: flask
+        links:
+            - "mongodb"
         depends_on:
             - mongodb
         ports:
