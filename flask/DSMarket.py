@@ -2,12 +2,15 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 from pymongo.errors import DuplicateKeyError
 from flask import Flask, request, jsonify, redirect, Response
-import json
+import json, os, sys
 import uuid
 import time
+sys.path.append('./data')
+import prepare_data
 
 # Connect to our local MongoDB
-client = MongoClient('mongodb://localhost:27017/')
+mongodb_hostname = os.environ.get("MONGO_HOSTNAME","localhost")
+client = MongoClient('mongodb://'+mongodb_hostname+':27017/')
 
 # Choose database
 db = client['InfoSys']
@@ -21,6 +24,14 @@ cart = {"products": [], "total_cost": 0}
 
 # Initiate Flask App
 app = Flask(__name__)
+# Check if data exists in Products and Users collections
+def check_data():
+    try:
+        if products_db.find({}).count() == 0 and users_db.find({}).count() == 0:
+            prepare_data.insert_all()
+    except Exception as e:
+        print(e)
+        raise e
 
 # Initialize dictionary for user login sessions
 users_sessions = {}
@@ -492,4 +503,5 @@ def update_product():
 
 # Εκτέλεση flask service σε debug mode, στην port 5000. 
 if __name__ == '__main__':
+    check_data()
     app.run(debug=True, host='0.0.0.0', port=5000)
