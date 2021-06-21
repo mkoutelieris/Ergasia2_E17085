@@ -878,3 +878,35 @@ if __name__ == '__main__':
 ```
 
   Με την παραπάνω εντολή, εκτελούμε την υπηρεσία flask μέσω του port 5000.
+
+
+## Εκτέλεση των services στο Docker
+
+1. Εγκατάσταση docker στο Linux
+  * Αρκεί να εκτελέσουμε τις παρακάτω εντολές στο terminal
+    * ```sudo apt-get update```
+    * ```sudo apt install -y apt-transport-https ca-certificates curl software-properties-common```
+    * ```curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -```
+    * ```sudo add-apt-repository -y "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"```
+    * ```sudo apt-get update```
+    * ```sudo apt install docker-ce```
+
+2. Εγκατάσταση docker-compose
+  * Αρκεί να εκτελέσουμε τις παρακάτω εντολές στο terminal
+    * ```sudo curl -L https://github.com/docker/compose/releases/download/1.21.2/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose```
+    * ```sudo chmod +x /usr/local/bin/docker-compose```
+
+3. Κατεβάζουμε τα αρχεία της εργασίας κάνοντας unzip τα περιεχόμενα και αποθηκεύοντας τα στην επιφάνεια εργασίας
+
+4. Ανοίγουμε το terminal και εισάγουμε την εντολή ```cd Desktop/Ergasia2_E17085-main```
+
+5. Έπειτα, δημιουργούμε τα images των services βάζοντας την εντολή ```sudo docker-compose build``` στο terminal (θα ζητηθεί ο κωδικός του χρήστη για να εκτελεστεί η εντολή)
+
+6. Όταν τελειώσει η δημιουργία των images, πρέπει να εκτελέσουμε τα images με την εντολή ```sudo docker-compose up -d```
+
+7. Τσεκάρουμε αν όλα τρέχουν καλά με την εντολή ```sudo docker ps -a```. Θα πρέπει να εμφανίζεται το παρακάτω στο terminal:
+<img src="https://user-images.githubusercontent.com/19634930/122838603-11ad5e00-d2ff-11eb-97b7-541c2939981b.png" width="1300" height="100">
+
+8. Κατεβάζουμε και εγκαθιστούμε μέσω του Ubuntu Software το Postman για να κάνουμε κλήση στα endpoints του service
+
+9. Χρησιμοποιούμε τα παραπάνω endpoints στο postman, π.χ. ```localhost:5000/register```, όπως αναγράφεται παραπάνω
