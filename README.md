@@ -14,15 +14,18 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 from pymongo.errors import DuplicateKeyError
 from flask import Flask, request, jsonify, redirect, Response
-import json
+import json, os, sys
 import uuid
 import time
+sys.path.append('./data')
+import prepare_data
 
 # Connect to our local MongoDB
-client = MongoClient('mongodb://localhost:27017/')
+mongodb_hostname = os.environ.get("MONGO_HOSTNAME","localhost")
+client = MongoClient('mongodb://'+mongodb_hostname+':27017/')
 
 # Choose database
-db = client['DSMarkets']
+db = client['InfoSys']
 
 # Choose collections
 users_db = db['Users']
@@ -33,11 +36,21 @@ cart = {"products": [], "total_cost": 0}
 
 # Initiate Flask App
 app = Flask(__name__)
+# Check if data exists in Products and Users collections
+def check_data():
+    try:
+        if products_db.find({}).count() == 0 and users_db.find({}).count() == 0:
+            prepare_data.insert_all()
+    except Exception as e:
+        print(e)
+        raise e
 ```
 
-  Στον παραπάνω κώδικα, εισάγουμε όλες τις βιβλιοθήκες που θα βοηθήσουν στην υλοποίηση των endpoints για το super market. Επιπρόσθετα από τις βιβλιοθήκες που υπήρχαν και στην 1η εργασία, έχει προστεθεί και η ObjectId βιβλιοθήκη για να μπορέσω να προσπελάσω και να επιστρέψω documents της mongodb με βάση το ```id``` που δίνει η βάση στα documents αυτόματα.
+  Στον παραπάνω κώδικα, εισάγουμε όλες τις βιβλιοθήκες που θα βοηθήσουν στην υλοποίηση των endpoints για το super market. Επιπρόσθετα από τις βιβλιοθήκες που υπήρχαν και στην 1η εργασία, έχει προστεθεί και η ObjectId βιβλιοθήκη για να μπορέσω να προσπελάσω και να επιστρέψω documents της mongodb με βάση το ```id``` που δίνει η βάση στα documents αυτόματα. Έχουν προστεθεί επίσης και οι ```os, sys, prepare_data``` οι οποίες θα βοηθήσουν για να εισάγουμε τις συναρτήσεις για την αρχικοποίηση της βάσης δεδομένων με δεδομένα.
 
-  Έπειτα, πραγματοποιώ σύνδεση στη βάση mongodb μέσω του Mongodb URI και αποθηκεύω αυτή τη σύνδεση στη μεταβλητή ```client```. Αποθηκεύω τη σύνδεση με την βάση δεδομένων DSMarkets στην μεταβλητή ```db``` και μετά μέσω αυτής αποθηκεύω την σύνδεση με τα collections Users και Products στις μεταβλητές ```users_db``` και ```products_db``` αντίστοιχα. Μετά, αρχικοποιώ την μεταβλητή ```cart``` για το καλάθι αγορών του χρήστη η οποία θα περιέχει τα κλειδία ```products``` και ```total_cost``` όπου το products θα περιέχει λίστα με τα προϊόντα προς αγορά και το total_cost θα περιέχει το συνολικό ποσό πληρωμής. Τέλος, κάνουμε εκκίνηση της Flask εφαμοργής μας.
+  Έπειτα, αποθηκεύω στη μεταβλητή ```mongodb_hostname``` τη μεταβλητή ```MONGO_HOSTNAME``` που έχουμε ορίσει στο docker-compose αρχείο και περιέχει το περιβάλλον του service στο container. Αντλώ αυτήν την πληροφορία καλώντας get μέθοδο στο object environ του module os. Έπειτα, πραγματοποιώ σύνδεση στη βάση mongodb μέσω του Mongodb URI και αποθηκεύω αυτή τη σύνδεση στη μεταβλητή ```client```. Αποθηκεύω τη σύνδεση με την βάση δεδομένων DSMarkets στην μεταβλητή ```db``` και μετά μέσω αυτής αποθηκεύω την σύνδεση με τα collections Users και Products στις μεταβλητές ```users_db``` και ```products_db``` αντίστοιχα. Μετά, αρχικοποιώ την μεταβλητή ```cart``` για το καλάθι αγορών του χρήστη η οποία θα περιέχει τα κλειδία ```products``` και ```total_cost``` όπου το products θα περιέχει λίστα με τα προϊόντα προς αγορά και το total_cost θα περιέχει το συνολικό ποσό πληρωμής. 
+  
+  Τέλος, κάνουμε εκκίνηση της Flask εφαμοργής μας και δημιουργούμε συνάρτηση ```check_data``` μέσα στην οποία ελέγχουμε αν υπάρχουν δεδομένα στα collection Products και Users μέσω της find μεθόδου και αν δεν υπάρχουν, κάνουμε insert τα δεδομένα αρχικοποιώντας τα collection με έτοιμα δεδομένα. Η μέθοδος ```insert_all()``` προέρχεται από το custom made module prepare_data.
 
 ```
 # Initialize dictionary for user login sessions
@@ -874,10 +887,11 @@ def update_product():
 ```
 # Εκτέλεση flask service σε debug mode, στην port 5000. 
 if __name__ == '__main__':
+    check_data()
     app.run(debug=True, host='0.0.0.0', port=5000)
 ```
 
-  Με την παραπάνω εντολή, εκτελούμε την υπηρεσία flask μέσω του port 5000.
+  Με την παραπάνω εντολή, εκτελούμε την συνάρτηση ```check_data()``` και τρέχουμε την υπηρεσία flask μέσω του port 5000.
 
 
 ## Εκτέλεση των services στο Docker
@@ -900,13 +914,16 @@ if __name__ == '__main__':
 
 4. Ανοίγουμε το terminal και εισάγουμε την εντολή ```cd Desktop/Ergasia2_E17085-main```
 
-5. Έπειτα, δημιουργούμε τα images των services βάζοντας την εντολή ```sudo docker-compose build``` στο terminal (θα ζητηθεί ο κωδικός του χρήστη για να εκτελεστεί η εντολή)
+5. Μετά, εισάγουμε την εντολή ```sudo docker pull mongo:latest``` για να εγκαταστήσουμε το image της βάσης δεδομένων. Ελέγχουμε αν όλα πήγαν σωστά με την εντολή ```sudo docker images``` η οποία θα πρέπει να εμφανίζει:
+<img src="https://user-images.githubusercontent.com/19634930/122948640-bcfff680-d383-11eb-8927-39e0c25a6667.png" width="1300" height="100">
 
-6. Όταν τελειώσει η δημιουργία των images, πρέπει να εκτελέσουμε τα images με την εντολή ```sudo docker-compose up -d```
+6. Έπειτα, δημιουργούμε τα images των services βάζοντας την εντολή ```sudo docker-compose build``` στο terminal (θα ζητηθεί ο κωδικός του χρήστη για να εκτελεστεί η εντολή)
 
-7. Τσεκάρουμε αν όλα τρέχουν καλά με την εντολή ```sudo docker ps -a```. Θα πρέπει να εμφανίζεται το παρακάτω στο terminal:
+7. Όταν τελειώσει η δημιουργία των images, πρέπει να εκτελέσουμε τα images με την εντολή ```sudo docker-compose up -d```
+
+8. Τσεκάρουμε αν όλα τρέχουν καλά με την εντολή ```sudo docker ps -a```. Θα πρέπει να εμφανίζεται το παρακάτω στο terminal:
 <img src="https://user-images.githubusercontent.com/19634930/122838603-11ad5e00-d2ff-11eb-97b7-541c2939981b.png" width="1300" height="100">
 
-8. Κατεβάζουμε και εγκαθιστούμε μέσω του Ubuntu Software το Postman για να κάνουμε κλήση στα endpoints του service
+9. Κατεβάζουμε και εγκαθιστούμε μέσω του Ubuntu Software το Postman για να κάνουμε κλήση στα endpoints του service
 
-9. Χρησιμοποιούμε τα παραπάνω endpoints στο postman, π.χ. ```localhost:5000/register```, όπως αναγράφεται παραπάνω
+10. Χρησιμοποιούμε τα παραπάνω endpoints στο postman, π.χ. ```localhost:5000/register```, όπως αναγράφεται παραπάνω
